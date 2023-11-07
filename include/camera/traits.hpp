@@ -1,8 +1,8 @@
 #pragma once
 
-namespace camera {
+namespace camera
+{
 
-template <typename T>
-struct CameraModelTraits;
+template <typename T> struct CameraModelTraits;
 
 }

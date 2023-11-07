@@ -93,27 +93,6 @@ class VisualLiDARCalibration
 
         const Eigen::Isometry3d init_T_camera_lidar = init_T_lidar_camera.inverse();
 
-        auto viewer = guik::LightViewer::instance(Eigen::Vector2i(-1, -1), vm.count("background"));
-        viewer->set_draw_xy_grid(false);
-        viewer->use_arcball_camera_control();
-
-        viewer->invoke(
-            []
-            {
-                ImGui::SetNextWindowPos({55, 300}, ImGuiCond_Once);
-                ImGui::Begin("texts");
-                ImGui::End();
-                ImGui::SetNextWindowPos({55, 60}, ImGuiCond_Once);
-                ImGui::Begin("visualizer");
-                ImGui::End();
-                ImGui::SetNextWindowPos({1260, 60}, ImGuiCond_Once);
-                ImGui::Begin("images");
-                ImGui::End();
-            });
-
-        VisualLiDARVisualizer vis(proj, dataset, false);
-        vis.set_T_camera_lidar(init_T_camera_lidar);
-
         VisualCameraCalibrationParams params;
         params.disable_z_buffer_culling = vm.count("disable_culling");
         params.nid_bins = vm["nid_bins"].as<int>();
@@ -135,7 +114,7 @@ class VisualLiDARCalibration
                       << vlcal::console::reset << std::endl;
         }
 
-        params.callback = [&](const Eigen::Isometry3d &T_camera_lidar) { vis.set_T_camera_lidar(T_camera_lidar); };
+        // params.callback = [&](const Eigen::Isometry3d &T_camera_lidar) { vis.set_T_camera_lidar(T_camera_lidar); };
         VisualCameraCalibration calib(proj, dataset, params);
 
         std::atomic_bool optimization_terminated = false;
@@ -147,10 +126,10 @@ class VisualLiDARCalibration
                 optimization_terminated = true;
             });
 
-        while (!optimization_terminated)
-        {
-            vis.spin_once();
-        }
+        // while (!optimization_terminated)
+        // {
+        //     vis.spin_once();
+        // }
 
         optimization_thread.join();
 
@@ -174,14 +153,6 @@ class VisualLiDARCalibration
         sst << "--- T_lidar_camera ---" << std::endl;
         sst << T_lidar_camera.matrix() << std::endl;
         sst << "saved to " << data_path + "/calib.json";
-
-        viewer->append_text(sst.str());
-        viewer->spin_once();
-
-        if (!vm.count("auto_quit"))
-        {
-            viewer->spin();
-        }
     }
 
   private:

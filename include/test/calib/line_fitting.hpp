@@ -1,9 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <Eigen/Core>
+#include <vector>
 
-namespace vlcal {
+namespace vlcal
+{
 
 /**
  * @brief Least squares line fitting
@@ -11,6 +12,6 @@ namespace vlcal {
  * @param points Input points
  * @return       A point on line and normal
  */
-std::pair<Eigen::Vector2d, Eigen::Vector2d> fit_line(const std::vector<Eigen::Vector2i>& points);
+std::pair<Eigen::Vector2d, Eigen::Vector2d> fit_line(const std::vector<Eigen::Vector2i> &points);
 
-}  // namespace vlcal
+} // namespace vlcal

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <vlcal/common/frame.hpp>
 #include <camera/generic_camera_base.hpp>
+#include <vlcal/common/frame.hpp>
 
-namespace vlcal {
+namespace vlcal
+{
 
 /**
  * @brief Estimate the bearing vector of a given 2D point
@@ -11,7 +12,7 @@ namespace vlcal {
  * @param pt_2d  2D point
  * @return       3D bearing vector
  */
-Eigen::Vector3d estimate_direction(const camera::GenericCameraBase::ConstPtr& proj, const Eigen::Vector2d& pt_2d);
+Eigen::Vector3d estimate_direction(const camera::GenericCameraBase::ConstPtr &proj, const Eigen::Vector2d &pt_2d);
 
 /**
  * @brief Estimate camera fov
@@ -19,13 +20,13 @@ Eigen::Vector3d estimate_direction(const camera::GenericCameraBase::ConstPtr& pr
  * @param image_size  Image size
  * @return            FoV [rad]
  */
-double estimate_camera_fov(const camera::GenericCameraBase::ConstPtr& proj, const Eigen::Vector2i& image_size);
+double estimate_camera_fov(const camera::GenericCameraBase::ConstPtr &proj, const Eigen::Vector2i &image_size);
 
 /**
  * @brief Estimate LiDAR fov
  * @param points  LiDAR points
  * @return        LiDAR FoV [rad]
  */
-double estimate_lidar_fov(const Frame::ConstPtr& points);
+double estimate_lidar_fov(const Frame::ConstPtr &points);
 
-}  // namespace vlcal
+} // namespace vlcal
