@@ -26,14 +26,16 @@ struct OmnidirectionalProjection
         const auto &k2 = distortion[1];
         const auto &p1 = distortion[2];
         const auto &p2 = distortion[3];
+        const auto &k3 = distortion[4];
 
         const auto pt_s = point_3d.normalized().eval();
         const auto pt_u = (pt_s.template head<2>() / (pt_s.z() + xi)).eval();
 
         const auto r2 = pt_u.squaredNorm();
         const auto r4 = r2 * r2;
+        const auto r6 = r2 * r4;
 
-        const auto dr = (1.0 + k1 * r2 + k2 * r4);
+        const auto dr = (1.0 + k1 * r2 + k2 * r4 + k3 * r6);
         const auto x2 = pt_u[0] * pt_u[0];
         const auto y2 = pt_u[1] * pt_u[1];
         const auto xy = pt_u[0] * pt_u[1];
@@ -49,7 +51,7 @@ struct OmnidirectionalProjection
 template <> struct CameraModelTraits<OmnidirectionalProjection>
 {
     static constexpr int num_intrinsic_params = 5;
-    static constexpr int num_distortion_params = 4;
+    static constexpr int num_distortion_params = 5;
 
     static std::string projection_model() { return "unified"; }
 
