@@ -37,8 +37,12 @@ Eigen::Isometry3d VisualCameraCalibration::calibrate(const Eigen::Isometry3d &in
     Eigen::Isometry3d T_camera_lidar = init_T_camera_lidar;
 
     // Outer loop
-    for (int i = 0; i < params.max_outer_iterations; i++)
+    for (int outer_idx = 0; outer_idx < params.max_outer_iterations; outer_idx++)
     {
+        int progress_percent = static_cast<int>(100 * ((double)outer_idx / ((double)params.max_outer_iterations)));
+        std::cout << "[" << progress_percent << "%], [Running Auto-Extrinsic Calibration...], [Outer loop " << outer_idx
+                  << "/" << params.max_outer_iterations << "]" << std::endl;
+
         Eigen::Isometry3d new_T_camera_lidar;
         switch (params.registration_type)
         {
@@ -68,7 +72,7 @@ Eigen::Isometry3d VisualCameraCalibration::calibrate(const Eigen::Isometry3d &in
         }
         else
         {
-            std::cout << "Outer loop: " << i << std::endl;
+            std::cout << "Outer loop: " << outer_idx << std::endl;
         }
     }
 
@@ -109,8 +113,7 @@ Eigen::Isometry3d VisualCameraCalibration::estimate_pose_nelder_mead(const Eigen
 
     double best_cost = std::numeric_limits<double>::max();
 
-    const auto f = [&](const gtsam::Vector6 &x)
-    {
+    const auto f = [&](const gtsam::Vector6 &x) {
         const Eigen::Isometry3d T_camera_lidar =
             init_T_camera_lidar * Eigen::Isometry3d(gtsam::Pose3::Expmap(x).matrix());
         double sum_costs = 0.0;
