@@ -11,6 +11,8 @@
 
 #include <vlcal/common/console_colors.hpp>
 
+#include <vector>
+
 namespace camera
 {
 
