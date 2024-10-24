@@ -37,12 +37,9 @@ Eigen::Isometry3d VisualCameraCalibration::calibrate(const Eigen::Isometry3d &in
     Eigen::Isometry3d T_camera_lidar = init_T_camera_lidar;
 
     // Outer loop
+    std::cout << "[0%], [Running Auto-Extrinsic Calibration...]" << std::endl;
     for (int outer_idx = 0; outer_idx < params.max_outer_iterations; outer_idx++)
     {
-        int progress_percent = static_cast<int>(100 * ((double)outer_idx / ((double)params.max_outer_iterations)));
-        std::cout << "[" << progress_percent << "%], [Running Auto-Extrinsic Calibration...], [Outer loop " << outer_idx
-                  << "/" << params.max_outer_iterations << "]" << std::endl;
-
         Eigen::Isometry3d new_T_camera_lidar;
         switch (params.registration_type)
         {
@@ -62,19 +59,19 @@ Eigen::Isometry3d VisualCameraCalibration::calibrate(const Eigen::Isometry3d &in
         const bool converged = delta_t < params.delta_trans_thresh && delta_r < params.delta_rot_thresh;
 
         std::stringstream sst;
-        sst << boost::format("delta_t: %.5f [m]  delta_r: %.5f [rad]") % delta_t % delta_r << std::endl;
+        auto fmt = boost::format("delta_t: %.5f [m]  delta_r: %.5f [rad]") % delta_t % delta_r;
+        sst << fmt << std::endl;
         sst << (converged ? "Outer loop converged" : "Re-run inner optimization with the new viewpoint");
         std::cout << sst.str() << std::endl;
 
+        int progress_percent = static_cast<int>(100 * (outer_idx + 1) / params.max_outer_iterations);
+        std::cout << "[" << progress_percent << "%], [Running Auto-Extrinsic Calibration: " << fmt << "]" << std::endl;
         if (converged)
-        {
             break;
-        }
         else
-        {
             std::cout << "Outer loop: " << outer_idx << std::endl;
-        }
     }
+    std::cout << "[100%], [Auto-Extrinsic Calibration Finished]" << std::endl;
 
     return T_camera_lidar;
 }
@@ -113,7 +110,8 @@ Eigen::Isometry3d VisualCameraCalibration::estimate_pose_nelder_mead(const Eigen
 
     double best_cost = std::numeric_limits<double>::max();
 
-    const auto f = [&](const gtsam::Vector6 &x) {
+    const auto f = [&](const gtsam::Vector6 &x)
+    {
         const Eigen::Isometry3d T_camera_lidar =
             init_T_camera_lidar * Eigen::Isometry3d(gtsam::Pose3::Expmap(x).matrix());
         double sum_costs = 0.0;
