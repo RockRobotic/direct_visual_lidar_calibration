@@ -27,6 +27,8 @@ struct VisualCameraCalibrationParams
 
         nid_bins = 16;
 
+        rotation_only = false;
+
         registration_type = RegistrationType::NID_BFGS;
         nelder_mead_init_step = 1e-3;
         nelder_mead_convergence_criteria = 1e-8;
@@ -39,6 +41,11 @@ struct VisualCameraCalibrationParams
 
     bool disable_z_buffer_culling; ///< If true, do not remove hidden points
     int nid_bins;                  ///< Number of histogram bins for NID computation
+
+    bool rotation_only; ///< If true, optimize only the rotation and keep the translation
+                        ///< (lever arm) fixed at its initial value. Recommended for nadir
+                        ///< aerial data where translation is weakly observable and trades
+                        ///< off against rotation in the NID objective.
 
     RegistrationType registration_type;
     double nelder_mead_init_step;

@@ -25,6 +25,62 @@
 namespace vlcal
 {
 
+namespace
+{
+
+/**
+ * Manifold over the Sophus SE3 parameter block ([qx qy qz qw tx ty tz]) whose
+ * tangent space is only the 3 rotation DoF: Plus() applies an SO3 increment and
+ * copies the translation through unchanged, so the optimizer cannot move the
+ * lever arm. Used when VisualCameraCalibrationParams::rotation_only is set.
+ */
+class RotationOnlySE3Manifold : public ceres::Manifold
+{
+  public:
+    int AmbientSize() const override { return Sophus::SE3d::num_parameters; }
+    int TangentSize() const override { return Sophus::SO3d::DoF; }
+
+    bool Plus(const double *x, const double *delta, double *x_plus_delta) const override
+    {
+        const Eigen::Map<const Sophus::SE3d> T(x);
+        const Eigen::Map<const Eigen::Vector3d> d(delta);
+        Eigen::Map<Sophus::SE3d> T_out(x_plus_delta);
+        T_out = Sophus::SE3d(T.so3() * Sophus::SO3d::exp(d), T.translation());
+        return true;
+    }
+
+    bool PlusJacobian(const double *x, double *jacobian) const override
+    {
+        const Eigen::Map<const Sophus::SE3d> T(x);
+        Eigen::Map<Eigen::Matrix<double, Sophus::SE3d::num_parameters, Sophus::SO3d::DoF, Eigen::RowMajor>> J(
+            jacobian);
+        J.setZero();
+        J.template topRows<Sophus::SO3d::num_parameters>() = T.so3().Dx_this_mul_exp_x_at_0();
+        return true;
+    }
+
+    bool Minus(const double *y, const double *x, double *y_minus_x) const override
+    {
+        const Eigen::Map<const Sophus::SE3d> T_y(y);
+        const Eigen::Map<const Sophus::SE3d> T_x(x);
+        Eigen::Map<Eigen::Vector3d> d(y_minus_x);
+        d = (T_x.so3().inverse() * T_y.so3()).log();
+        return true;
+    }
+
+    bool MinusJacobian(const double *x, double *jacobian) const override
+    {
+        const Eigen::Map<const Sophus::SE3d> T(x);
+        Eigen::Map<Eigen::Matrix<double, Sophus::SO3d::DoF, Sophus::SE3d::num_parameters, Eigen::RowMajor>> J(
+            jacobian);
+        J.setZero();
+        J.template leftCols<Sophus::SO3d::num_parameters>() = T.so3().Dx_log_this_inv_by_x_at_this();
+        return true;
+    }
+};
+
+} // namespace
+
 VisualCameraCalibration::VisualCameraCalibration(const camera::GenericCameraBase::ConstPtr &proj,
                                                  const std::vector<VisualLiDARData::ConstPtr> &dataset,
                                                  const VisualCameraCalibrationParams &params)
@@ -112,8 +168,14 @@ Eigen::Isometry3d VisualCameraCalibration::estimate_pose_nelder_mead(const Eigen
 
     const auto f = [&](const gtsam::Vector6 &x)
     {
+        gtsam::Vector6 x_masked = x;
+        if (params.rotation_only)
+        {
+            // Pose3 tangent is [omega; v]; zeroing v keeps the translation at init
+            x_masked.tail<3>().setZero();
+        }
         const Eigen::Isometry3d T_camera_lidar =
-            init_T_camera_lidar * Eigen::Isometry3d(gtsam::Pose3::Expmap(x).matrix());
+            init_T_camera_lidar * Eigen::Isometry3d(gtsam::Pose3::Expmap(x_masked).matrix());
         double sum_costs = 0.0;
 
 #pragma omp parallel for reduction(+ : sum_costs)
@@ -240,7 +302,10 @@ Eigen::Isometry3d VisualCameraCalibration::estimate_pose_bfgs(const Eigen::Isome
     }
 
     auto cost = new ceres::AutoDiffFirstOrderFunction<MultiNIDCost, Sophus::SE3d::num_parameters>(sum_nid);
-    ceres::GradientProblem problem(cost, new Sophus::Manifold<Sophus::SE3>());
+    ceres::Manifold *manifold = params.rotation_only
+                                    ? static_cast<ceres::Manifold *>(new RotationOnlySE3Manifold())
+                                    : new Sophus::Manifold<Sophus::SE3>();
+    ceres::GradientProblem problem(cost, manifold);
 
     ceres::GradientProblemSolver::Options options;
     options.minimizer_progress_to_stdout = true;
