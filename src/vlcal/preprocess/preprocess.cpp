@@ -435,7 +435,7 @@ Preprocess::get_camera_params(const boost::program_options::variables_map &vm, c
     std::string camera_model = vm["camera_model"].as<std::string>();
     if (camera_model != "auto")
     {
-        const std::unordered_set<std::string> valid_camera_models = {"plumb_bob", "fisheye", "equidistant", "omnidir",
+        const std::unordered_set<std::string> valid_camera_models = {"plumb_bob", "fisheye", "equidistant", "omnidir", "omnidir_ext",
                                                                      "equirectangular"};
         if (!valid_camera_models.count(camera_model))
         {
