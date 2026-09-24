@@ -58,6 +58,10 @@ camera::GenericCameraBase::ConstPtr create_camera(const std::string &camera_mode
     {
         return create_camera<camera::OmnidirectionalProjection>(intrinsics, distortion_coeffs);
     }
+    else if (camera_model == "omnidir_ext")
+    {
+        return create_camera<camera::OmnidirectionalExtProjection>(intrinsics, distortion_coeffs);
+    }
     else if (camera_model == "equirectangular")
     {
         return create_camera<camera::EquirectangularProjection>(intrinsics, distortion_coeffs);
